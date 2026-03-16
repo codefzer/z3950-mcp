@@ -182,3 +182,18 @@ class QueryBuilder:
                 else:
                     params['keyword'] += ' ' + part
         return params
+
+
+# ---------------------------------------------------------------------------
+# Singleton accessor
+# ---------------------------------------------------------------------------
+
+_shared_query_builder: Optional[QueryBuilder] = None
+
+
+def get_shared_query_builder() -> QueryBuilder:
+    """Get or create the shared QueryBuilder singleton."""
+    global _shared_query_builder
+    if _shared_query_builder is None:
+        _shared_query_builder = QueryBuilder()
+    return _shared_query_builder

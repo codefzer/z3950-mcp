@@ -14,7 +14,7 @@ from .record_processor import (
     MARCFields,
     get_shared_processor,
 )
-from .query import QueryBuilder
+from .query import QueryBuilder, get_shared_query_builder
 
 __all__ = [
     'AsyncConnectionPool',
@@ -25,4 +25,5 @@ __all__ = [
     'MARCFields',
     'get_shared_processor',
     'QueryBuilder',
+    'get_shared_query_builder',
 ]

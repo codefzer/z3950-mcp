@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional
 
 from z3950_client.connection_pool import get_shared_pool, run_query_parallel
 from z3950_client.record_processor import get_shared_processor
-from z3950_client.query import QueryBuilder
+from z3950_client.query import get_shared_query_builder
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +39,7 @@ def _search_single_library(
     results: List[Dict[str, Any]] = []
 
     try:
-        qbuilder = QueryBuilder()
+        qbuilder = get_shared_query_builder()
         z_query = qbuilder.build_ccl_query(query_type, query)
         if not z_query:
             return results
@@ -86,6 +86,7 @@ async def search_libraries(
     libraries: List[str],
     query_type: str = 'keyword',
     max_results: int = 50,
+    pool=None,
 ) -> Dict[str, Any]:
     """
     Search multiple libraries in parallel.
@@ -93,7 +94,8 @@ async def search_libraries(
     Returns:
         Aggregated, deduplicated result dict.
     """
-    pool = await get_shared_pool()
+    if pool is None:
+        pool = await get_shared_pool()
     logger.info(f"Searching {len(libraries)} libraries for {query_type}='{query}'")
 
     known_libraries = set(pool.list_libraries())
@@ -173,5 +175,6 @@ async def search_tool(
         libraries=lib_list,
         query_type=query_type,
         max_results=max_results,
+        pool=pool,
     )
     return json.dumps(result, indent=2)

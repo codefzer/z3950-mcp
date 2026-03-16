@@ -9,6 +9,8 @@ import xml.etree.ElementTree as ET
 import pytest
 import pytest_asyncio
 import z3950_client.record_processor as _rp
+import z3950_client.query as _q
+import resources.library_info as _li
 from pathlib import Path
 from unittest.mock import MagicMock, patch, AsyncMock
 from typing import List, Dict, Any
@@ -37,11 +39,15 @@ from z3950_client.query import QueryBuilder
 # ---------------------------------------------------------------------------
 
 @pytest.fixture(autouse=True)
-def reset_shared_processor():
-    """Reset the MARCProcessor singleton before and after each test."""
+def reset_singletons():
+    """Reset singletons before and after each test."""
     _rp._shared_processor = None
+    _q._shared_query_builder = None
+    _li._cached_config = None
     yield
     _rp._shared_processor = None
+    _q._shared_query_builder = None
+    _li._cached_config = None
 
 
 @pytest_asyncio.fixture(autouse=True)

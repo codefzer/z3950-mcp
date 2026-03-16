@@ -13,8 +13,7 @@ from xml.sax.saxutils import escape as xml_escape
 from pymarc import Record as PymarcRecord
 
 from z3950_client.connection_pool import get_shared_pool
-from z3950_client.record_processor import get_shared_processor
-from z3950_client.query import QueryBuilder
+from z3950_client.record_processor import get_shared_processor, fetch_first_record_by_isbn
 
 logger = logging.getLogger(__name__)
 
@@ -60,18 +59,10 @@ async def export_marc_record(
 
 def _fetch_and_export(conn, isbn: str, export_format: str) -> Dict[str, Any]:
     """Blocking fetch + format conversion."""
-    qbuilder = QueryBuilder()
-    query = qbuilder.build_ccl_query('isbn', isbn)
-    if not query:
-        return {'isbn': isbn, 'error': 'Invalid query'}
+    parsed, hit_count = fetch_first_record_by_isbn(conn, isbn)
 
-    resultset = conn.search(query)
-    if len(resultset) == 0:
+    if hit_count == 0:
         return {'isbn': isbn, 'found': False, 'message': 'No records found'}
-
-    processor = get_shared_processor()
-    zoom_record = resultset[0]
-    parsed = processor.parse_zoom_record(zoom_record)
 
     if not parsed:
         return {'isbn': isbn, 'error': 'Failed to parse MARC record'}
@@ -89,6 +80,8 @@ def _fetch_and_export(conn, isbn: str, export_format: str) -> Dict[str, Any]:
         'found': True,
         'title': title,
     }
+
+    processor = get_shared_processor()
 
     if export_format == 'binary':
         binary = processor.record_to_marc_binary(parsed)
@@ -139,8 +132,8 @@ def _marc_to_xml(record) -> str:
             lines.append(f'  <leader>{xml_escape(str(record.leader))}</leader>')
 
         for field in record.fields:
-            if field.tag.isdigit() and int(field.tag) < 10:
-                # Fix 1: escape control field value
+            # Control fields are 001-009; string comparison is faster than int()
+            if field.tag < '010':
                 lines.append(
                     f'  <controlfield tag="{field.tag}">'
                     f'{xml_escape(field.value())}</controlfield>'
@@ -153,7 +146,6 @@ def _marc_to_xml(record) -> str:
                     f'ind1="{xml_escape(str(ind1))}" ind2="{xml_escape(str(ind2))}">'
                 )
                 if hasattr(field, 'subfields'):
-                    # Fix 1: escape every subfield value
                     try:
                         for sf in field:
                             lines.append(

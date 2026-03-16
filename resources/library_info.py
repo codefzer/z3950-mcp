@@ -11,6 +11,23 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 
+_cached_config: Optional[Dict[str, Any]] = None
+
+
+def _load_config() -> Dict[str, Any]:
+    """Load and cache library config from disk (read once)."""
+    global _cached_config
+    if _cached_config is None:
+        config_path = Path(__file__).parent.parent / 'config' / 'libraries.json'
+        try:
+            with open(config_path, 'r') as f:
+                _cached_config = json.load(f)
+        except FileNotFoundError:
+            logger.warning(f"Config file not found: {config_path}")
+            _cached_config = {}
+    return _cached_config
+
+
 def get_library_info(library_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Get library information and search documentation.
@@ -21,14 +38,7 @@ def get_library_info(library_id: Optional[str] = None) -> Dict[str, Any]:
     Returns:
         Dictionary with library information
     """
-    config_path = Path(__file__).parent.parent / 'config' / 'libraries.json'
-
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-    except FileNotFoundError:
-        logger.warning(f"Config file not found: {config_path}")
-        return {}
+    config = _load_config()
 
     if library_id:
         if library_id not in config:

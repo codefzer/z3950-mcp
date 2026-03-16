@@ -4,7 +4,7 @@ Uses PyMARC for validation and incremental parsing.
 """
 
 import logging
-from typing import Dict, Any, Optional, List
+from typing import Dict, Any, Optional, List, Tuple
 from io import BytesIO
 
 from pymarc import Record, MARCReader
@@ -319,3 +319,35 @@ def get_shared_processor() -> MARCProcessor:
     if _shared_processor is None:
         _shared_processor = MARCProcessor()
     return _shared_processor
+
+
+# ---------------------------------------------------------------------------
+# Shared ISBN fetch helper (used by holdings, details, export tools)
+# ---------------------------------------------------------------------------
+
+def fetch_first_record_by_isbn(conn, isbn: str) -> Tuple[Optional[Record], int]:
+    """
+    Search for an ISBN on a Z39.50 connection and return the first parsed record.
+
+    Args:
+        conn: zoom.Connection object.
+        isbn: ISBN to search for.
+
+    Returns:
+        (parsed_record_or_None, hit_count)
+    """
+    from z3950_client.query import get_shared_query_builder
+
+    qbuilder = get_shared_query_builder()
+    query = qbuilder.build_ccl_query('isbn', isbn)
+    if not query:
+        return None, 0
+
+    resultset = conn.search(query)
+    hit_count = len(resultset)
+    if hit_count == 0:
+        return None, 0
+
+    processor = get_shared_processor()
+    parsed = processor.parse_zoom_record(resultset[0])
+    return parsed, hit_count

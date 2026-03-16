@@ -8,8 +8,7 @@ import logging
 from typing import Dict, Any, Optional
 
 from z3950_client.connection_pool import get_shared_pool
-from z3950_client.record_processor import get_shared_processor
-from z3950_client.query import QueryBuilder
+from z3950_client.record_processor import get_shared_processor, fetch_first_record_by_isbn
 
 logger = logging.getLogger(__name__)
 
@@ -51,24 +50,15 @@ async def get_record_details(
 
 def _fetch_details(conn, isbn: str) -> Dict[str, Any]:
     """Blocking detail fetch on a single connection."""
-    qbuilder = QueryBuilder()
-    query = qbuilder.build_ccl_query('isbn', isbn)
-    if not query:
-        return {'isbn': isbn, 'found': False, 'error': 'Invalid query'}
-
-    resultset = conn.search(query)
-    hit_count = len(resultset)
+    parsed, hit_count = fetch_first_record_by_isbn(conn, isbn)
 
     if hit_count == 0:
         return {'isbn': isbn, 'found': False, 'message': 'No records found'}
 
-    processor = get_shared_processor()
-    zoom_record = resultset[0]
-    parsed = processor.parse_zoom_record(zoom_record)
-
     if not parsed:
         return {'isbn': isbn, 'found': False, 'error': 'Failed to parse MARC record'}
 
+    processor = get_shared_processor()
     rec_dict = processor.extract_full_fields(parsed)
     rec_dict['isbn'] = isbn
     rec_dict['found'] = True

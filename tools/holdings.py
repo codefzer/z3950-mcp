@@ -10,8 +10,7 @@ from typing import Dict, Any, Optional, List
 from pymarc import Record as PymarcRecord
 
 from z3950_client.connection_pool import get_shared_pool
-from z3950_client.record_processor import get_shared_processor, MARCFields
-from z3950_client.query import QueryBuilder
+from z3950_client.record_processor import get_shared_processor, MARCFields, fetch_first_record_by_isbn
 
 logger = logging.getLogger(__name__)
 
@@ -43,63 +42,44 @@ async def check_availability(
 
     availability: Dict[str, Any] = {'isbn': isbn, 'libraries': {}}
 
-    # Fix 2: resolve connections first (must be sequential - event loop only),
-    # then dispatch all blocking checks in parallel with asyncio.gather.
-    lib_tasks: List[tuple] = []  # (lib_id, coroutine)
-
-    for lib_id in libraries:
+    # Parallelize both connection acquisition and blocking checks
+    async def _check_one(lib_id: str) -> tuple:
         conn = await pool.get_connection(lib_id)
         if not conn:
-            availability['libraries'][lib_id] = {
-                'available': False,
-                'error': 'Connection failed',
-            }
-        else:
-            lib_tasks.append((lib_id, asyncio.to_thread(_check_single, conn, isbn)))
+            return lib_id, {'available': False, 'error': 'Connection failed'}
+        result = await asyncio.to_thread(_check_single, conn, isbn)
+        return lib_id, result
 
-    if lib_tasks:
-        results = await asyncio.gather(
-            *[task for _, task in lib_tasks], return_exceptions=True
-        )
-        for (lib_id, _), result in zip(lib_tasks, results):
-            if isinstance(result, Exception):
-                logger.error(f"Error checking availability at {lib_id}: {result}")
-                availability['libraries'][lib_id] = {
-                    'available': False,
-                    'error': str(result),
-                }
-            else:
-                availability['libraries'][lib_id] = result
+    results = await asyncio.gather(
+        *[_check_one(lib_id) for lib_id in libraries],
+        return_exceptions=True,
+    )
+
+    for item in results:
+        if isinstance(item, Exception):
+            logger.error(f"Error checking availability: {item}")
+            continue
+        lib_id, result = item
+        availability['libraries'][lib_id] = result
 
     return availability
 
 
 def _check_single(conn, isbn: str) -> Dict[str, Any]:
     """Blocking check on a single connection."""
-    qbuilder = QueryBuilder()
-    query = qbuilder.build_ccl_query('isbn', isbn)
-    if not query:
-        return {'available': False, 'error': 'Invalid query'}
-
-    resultset = conn.search(query)
-    hit_count = len(resultset)
+    parsed, hit_count = fetch_first_record_by_isbn(conn, isbn)
 
     if hit_count == 0:
         return {'available': False, 'found': False}
 
     processor = get_shared_processor()
 
-    try:
-        zoom_record = resultset[0]
-        parsed = processor.parse_zoom_record(zoom_record)
-        if parsed:
-            rec_dict = processor.extract_minimal_fields(parsed)
-            rec_dict['available'] = True
-            rec_dict['holdings'] = _extract_holdings(parsed)
-            return rec_dict
-        return {'available': True, 'found': True}
-    except Exception as e:
-        return {'available': True, 'found': True, 'error_retrieving_details': str(e)}
+    if parsed:
+        rec_dict = processor.extract_minimal_fields(parsed)
+        rec_dict['available'] = True
+        rec_dict['holdings'] = _extract_holdings(parsed)
+        return rec_dict
+    return {'available': True, 'found': True}
 
 
 # ---------------------------------------------------------------------------
