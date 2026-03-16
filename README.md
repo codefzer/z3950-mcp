@@ -18,9 +18,6 @@ Fast, efficient MCP (Model Context Protocol) server for searching library catalo
 ### Installation
 
 ```bash
-# Clone the repository
-cd /Users/sam/Documents/GitHub/Z3950
-
 # Install dependencies
 pip install -r requirements.txt
 ```
