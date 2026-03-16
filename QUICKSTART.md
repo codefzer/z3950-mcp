@@ -36,7 +36,7 @@ Add to your Claude Desktop config (`~/Library/Application Support/Claude/claude_
   "mcpServers": {
     "z3950": {
       "command": "python",
-      "args": ["/Users/sam/Documents/GitHub/Z3950/server.py"]
+      "args": ["/path/to/Z3950/server.py"]
     }
   }
 }
