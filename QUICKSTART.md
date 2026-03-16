@@ -5,7 +5,6 @@ Get up and running in 5 minutes.
 ## 1. Install Dependencies
 
 ```bash
-cd /Users/sam/Documents/GitHub/Z3950
 pip install -r requirements.txt
 ```
 
