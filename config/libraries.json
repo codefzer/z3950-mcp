@@ -1,0 +1,83 @@
+{
+  "loc": {
+    "name": "Library of Congress",
+    "host": "z3950.loc.gov",
+    "port": 7090,
+    "database": "Voyager",
+    "preferred_syntax": "USMARC",
+    "description": "The United States Library of Congress - largest library in the world",
+    "timeout": 5,
+    "max_records": 100,
+    "search_attributes": {
+      "title": "4",
+      "author": "1",
+      "isbn": "7",
+      "subject": "21"
+    }
+  },
+  "worldcat": {
+    "name": "OCLC WorldCat",
+    "host": "z3950.oclc.org",
+    "port": 210,
+    "database": "WorldCat",
+    "preferred_syntax": "USMARC",
+    "description": "OCLC's WorldCat - the world's largest library catalog",
+    "timeout": 5,
+    "max_records": 100,
+    "search_attributes": {
+      "title": "4",
+      "author": "1",
+      "isbn": "7",
+      "subject": "21"
+    }
+  },
+  "alma-template": {
+    "name": "Ex Libris Alma (Template)",
+    "host": "z3950.alma.exlibrisgroup.com",
+    "port": 1921,
+    "database": "base{institution_id}",
+    "preferred_syntax": "USMARC",
+    "description": "Ex Libris Alma - modern library management system",
+    "timeout": 5,
+    "max_records": 100,
+    "requires_institution_id": true,
+    "search_attributes": {
+      "title": "4",
+      "author": "1",
+      "isbn": "7",
+      "subject": "21"
+    }
+  },
+  "nls": {
+    "name": "National Library of Scotland",
+    "host": "nls.alma.exlibrisgroup.com",
+    "port": 1921,
+    "database": "44NLS_INST",
+    "preferred_syntax": "USMARC",
+    "description": "National Library of Scotland - bibliographic records only, no holdings data",
+    "timeout": 5,
+    "max_records": 100,
+    "search_attributes": {
+      "title": "4",
+      "author": "1",
+      "isbn": "7",
+      "subject": "21"
+    }
+  },
+  "i-share": {
+    "name": "I-Share Consortium",
+    "host": "vufind.carli.illinois.edu",
+    "port": 210,
+    "database": "i-share",
+    "preferred_syntax": "USMARC",
+    "description": "Illinois Shared Library Catalog - consortium of Illinois universities",
+    "timeout": 5,
+    "max_records": 100,
+    "search_attributes": {
+      "title": "4",
+      "author": "1",
+      "isbn": "7",
+      "subject": "21"
+    }
+  }
+}
