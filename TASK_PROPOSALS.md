@@ -1,5 +1,19 @@
 # Codebase Issue Triage: Proposed Tasks
 
+## Accepted task proposal
+
+Accepted: **Task 1 (Typo fix)** — align `export_marc_record` docs/examples to use
+`export_format` consistently.
+
+### Why this one first
+- It is low-risk and user-facing.
+- It removes copy/paste friction in examples immediately.
+- It can be completed independently before larger behavioral changes.
+
+### Planned implementation scope
+- Update docs/examples that still use `format="binary"` for `export_marc_record(...)`.
+- Verify the examples match the actual tool signature in `server.py`.
+
 ## 1) Typo fix task: align exported MARC parameter name in docs/examples
 
 **Issue found**
