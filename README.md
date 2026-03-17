@@ -41,7 +41,7 @@ Add to your Claude Desktop configuration:
   "mcpServers": {
     "z3950": {
       "command": "python",
-      "args": ["/Users/sam/Documents/GitHub/Z3950/server.py"]
+      "args": ["/path/to/Z3950/server.py"]
     }
   }
 }
